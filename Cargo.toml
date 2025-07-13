@@ -3,6 +3,14 @@ name = "selfdeletion"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "selfdeletion"
+path = "src/lib.rs"
+
+[[bin]]
+name = "selfdeletion"
+path = "src/main.rs"
+
 [dependencies]
 windows = { version = "0.60.0", features = [
     "Wdk",
