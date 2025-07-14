@@ -9,7 +9,7 @@ use windows::{
             IO::IO_STATUS_BLOCK,
             Memory::{GetProcessHeap, HeapAlloc,HeapFree, HEAP_ZERO_MEMORY},
         },
-        Foundation::{GetLastError, CloseHandle},
+        Foundation::CloseHandle,
         Storage::FileSystem::{
             CreateFileW,
             SetFileInformationByHandle,
@@ -80,12 +80,7 @@ pub fn delete_self() -> Result<(), Box<dyn std::error::Error>> {
             OPEN_EXISTING,
             FILE_FLAGS_AND_ATTRIBUTES(0),
             None,
-        ).map_err(|_| {
-            let error_code = GetLastError();
-            format!("[!] CreateFileW [R] Failed With Error : {:?}", error_code)
-        })?;
-
-        println!("[i] Renaming :$DATA ...");
+        )?;
 
         // renaming the data stream
         SetFileInformationByHandle(
@@ -93,17 +88,9 @@ pub fn delete_self() -> Result<(), Box<dyn std::error::Error>> {
             FileRenameInfo,
             p_rename as *const c_void,
             s_rename as u32
-        ).map_err(|_| {
-            let error_code = GetLastError();
-            format!("[!] SetFileInformationByHandle failed with error: {:?}", error_code)
-        })?;
+        )?;
 
-        println!("[+] DONE");
-
-        CloseHandle(handle).map_err(|_| {
-            let error_code = GetLastError();
-            format!("[!] CloseHandle [R] failed with error: {:?}", error_code)
-        })?;
+        CloseHandle(handle)?;
 
     	//--------------------------------------------------------------------------------------------------------------------------
 	    // DELETING
@@ -117,16 +104,11 @@ pub fn delete_self() -> Result<(), Box<dyn std::error::Error>> {
             OPEN_EXISTING,
             FILE_FLAGS_AND_ATTRIBUTES(0),
             None,
-        ).map_err(|_| {
-            let error_code = GetLastError();
-            format!("[!] CreateFileW [D] Failed With Error : {:?}", error_code)
-        })?;
-
-        println!("[i] DELETING ...");
+        )?;
 
     	// marking for deletion after the file's handle is closed
         let mut iosb: MaybeUninit<IO_STATUS_BLOCK> = MaybeUninit::uninit();
-        let status = NtSetInformationFile(
+        let _status = NtSetInformationFile(
             handle,
             iosb.as_mut_ptr(),
             &file_disp_info_ex as *const _ as *const c_void,
@@ -134,15 +116,7 @@ pub fn delete_self() -> Result<(), Box<dyn std::error::Error>> {
             FileDispositionInformationEx,
         );
 
-        if !status.is_ok() {
-            return Err(Box::from("[!] NtSetInformationFile failed"));
-        }
-
-
-        CloseHandle(handle).map_err(|_| {
-            let error_code = GetLastError();
-            format!("[!] CloseHandle [D] failed with error: {:?}", error_code)
-        })?;
+        CloseHandle(handle)?;
 
         //--------------------------------------------------------------------------------------------------------------------------
 
